@@ -33,7 +33,11 @@ if not ticker:
     st.stop()
 
 data = fetch_financials(ticker)
-st.subheader(data["name"])
+# Title row: company name on left, model toggle on right
+left, right = st.columns([0.6, 0.4])
+left.subheader(data["name"])
+run_mode = right.radio("Model", ["DCF", "Multiples"], horizontal=True)
+
 st.write(f"Current price: **{data['price']:.2f}**")
 
 income: pd.DataFrame = data["income"]
@@ -63,45 +67,44 @@ debt = (
 )
 net_debt = float(debt - cash_bal)
 
-# Run DCF and Multiples side-by-side
-result = dcf(
-    revenue_series=revenue.squeeze(),
-    ebit_series=ebit.squeeze(),
-    d_and_a_series=dna.squeeze() if not dna.empty else None,
-    shares_out=shares,
-    net_debt=net_debt,
-    wacc=float(wacc),
-    terminal_g=float(term_g),
-)
-implied_dcf = float(result["per_share"])
-upside_dcf = (implied_dcf / data["price"] - 1) * 100 if data["price"] > 0 else np.nan
+if run_mode == "DCF":
+    result = dcf(
+        revenue_series=revenue.squeeze(),
+        ebit_series=ebit.squeeze(),
+        d_and_a_series=dna.squeeze() if not dna.empty else None,
+        shares_out=shares,
+        net_debt=net_debt,
+        wacc=float(wacc),
+        terminal_g=float(term_g),
+    )
+    implied = float(result["per_share"])
+    upside = (implied / data["price"] - 1) * 100 if data["price"] > 0 else np.nan
 
-ni = float(net_income.tail(1).sum())
-implied_pe = multiples_implied_price(ni, pe=S.FALLBACK_PE, shares_out=shares)
-upside_pe = (implied_pe / data["price"] - 1) * 100 if data["price"] > 0 else np.nan
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Implied price (DCF)", f"{implied:,.2f}", f"{upside:,.1f}% vs spot")
+    col2.metric("Enterprise Value (PV)", f"{result['enterprise_value']:,.0f}")
+    col3.metric("Equity Value", f"{result['equity_value']:,.0f}")
 
-m1, m2 = st.columns(2)
-m1.metric("Implied price (DCF)", f"{implied_dcf:,.2f}", f"{upside_dcf:,.1f}% vs spot")
-m2.metric("Implied price (P/E)", f"{implied_pe:,.2f}", f"{upside_pe:,.1f}% vs spot")
-st.caption(
-    "Sector median P/E not always available via yfinance; using S&P 500 median fallback (20x)."
-)
+    years = list(range(1, len(result["fcf"]) + 1))
+    st.plotly_chart(line_fcf(years, result["fcf"]), use_container_width=True)
 
-ev_col, eq_col = st.columns(2)
-ev_col.metric("Enterprise Value (PV)", f"{result['enterprise_value']:,.0f}")
-eq_col.metric("Equity Value", f"{result['equity_value']:,.0f}")
+    st.markdown("#### Sensitivity")
+    g_grid = np.linspace(g_min, g_max, 7)
+    w_grid = np.linspace(w_min, w_max, 7)
+    sens = growth_wacc_table(
+        revenue, ebit, dna if not dna.empty else None, shares, net_debt, g_grid, w_grid, term_g
+    )
+    st.plotly_chart(heatmap_sensitivity(sens), use_container_width=True)
+    st.dataframe(sens.style.format("{:.2f}"))
 
-years = list(range(1, len(result["fcf"]) + 1))
-st.plotly_chart(line_fcf(years, result["fcf"]), use_container_width=True)
-
-st.markdown("#### Sensitivity")
-g_grid = np.linspace(g_min, g_max, 7)
-w_grid = np.linspace(w_min, w_max, 7)
-sens = growth_wacc_table(
-    revenue, ebit, dna if not dna.empty else None, shares, net_debt, g_grid, w_grid, term_g
-)
-st.plotly_chart(heatmap_sensitivity(sens), use_container_width=True)
-st.dataframe(sens.style.format("{:.2f}"))
+else:
+    ni = float(net_income.tail(1).sum())
+    implied = multiples_implied_price(ni, pe=S.FALLBACK_PE, shares_out=shares)
+    upside = (implied / data["price"] - 1) * 100 if data["price"] > 0 else np.nan
+    st.metric("Implied price (P/E)", f"{implied:,.2f}", f"{upside:,.1f}% vs spot")
+    st.caption(
+        "Sector median P/E not always available via yfinance; using S&P 500 median fallback (20x)."
+    )
 
 st.divider()
 st.markdown(
@@ -114,7 +117,7 @@ st.markdown(
 <style>
 :root { --apple-font: -apple-system, BlinkMacSystemFont, "SF Pro Text","SF Pro Display","Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif; }
 /* Apply system font but preserve Material icon glyphs */
-html, body, [data-testid="stAppViewContainer"] :not(.material-icons):not(.material-icons-outlined):not(.material-icons-round):not(.material-icons-sharp):not(.material-symbols-outlined):not(.material-symbols-rounded):not(.material-symbols-sharp) {
+html, body, [data-testid=\"stAppViewContainer\"] :not(.material-icons):not(.material-icons-outlined):not(.material-icons-round):not(.material-icons-sharp):not(.material-symbols-outlined):not(.material-symbols-rounded):not(.material-symbols-sharp) {
   font-family: var(--apple-font) !important;
 }
 /* Ensure icon fonts render correctly */
@@ -125,10 +128,10 @@ html, body, [data-testid="stAppViewContainer"] :not(.material-icons):not(.materi
   font-weight: normal;
 }
 /* Title regular weight */
-h1, div[data-testid="stMarkdownContainer"] h1, .stMarkdown h1, [data-testid="stAppViewContainer"] h1 { font-weight: 400 !important; }
+h1, div[data-testid=\"stMarkdownContainer\"] h1, .stMarkdown h1, [data-testid=\"stAppViewContainer\"] h1 { font-weight: 400 !important; }
 /* Sidebar spacing: moderate and consistent */
-[data-testid="stSidebar"] .block-container { padding-top: 0.75rem; padding-bottom: 0.75rem; }
-[data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.6rem !important; row-gap: 0.6rem !important; }
+[data-testid=\"stSidebar\"] .block-container { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+[data-testid=\"stSidebar\"] [data-testid=\"stVerticalBlock\"] { gap: 0.6rem !important; row-gap: 0.6rem !important; }
 /* Assumptions header: bold and slightly larger */
 .assumptions-header { font-weight: 600; font-size: 1.05rem; margin-top: 0.25rem; }
 </style>
