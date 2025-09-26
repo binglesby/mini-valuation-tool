@@ -10,13 +10,12 @@ from mini_valuation.viz import line_fcf, heatmap_sensitivity
 
 S = get_settings()
 st.set_page_config(page_title="Mini Valuation Tool", layout="wide")
-st.title("Valuation Tool, created by Ben Inglesby")
+st.title("Mini Valuation Tool")
 st.write("Created by Ben Inglesby")
 st.caption("Educational use only. Not investment advice.")
 
 with st.sidebar:
     ticker = st.text_input("Ticker", value="AAPL").strip()
-    run_mode = st.radio("Model", ["DCF", "Multiples"], horizontal=True)
     wacc = st.slider("WACC", 0.04, 0.14, S.DEFAULT_WACC, 0.005)
     term_g = st.slider("Terminal growth", 0.0, 0.04, S.DEFAULT_TERMINAL_G, 0.005)
     st.divider()
@@ -24,7 +23,7 @@ with st.sidebar:
     g_min, g_max = st.slider("Revenue growth range", -0.02, 0.20, (0.03, 0.10), 0.005)
     w_min, w_max = st.slider("WACC range", 0.05, 0.15, (0.07, 0.11), 0.005)
     st.divider()
-    st.write("Assumptions")
+    st.markdown('<div class="assumptions-header">Assumptions</div>', unsafe_allow_html=True)
     st.text(f"Tax rate: {S.TAX_RATE:.0%}")
     st.text(f"Capex: {S.CAPEX_PCT_SALES:.0%} of revenue")
     st.text(f"ΔWC: {S.DELTA_WC_PCT_SALES:.0%} of revenue")
@@ -64,44 +63,45 @@ debt = (
 )
 net_debt = float(debt - cash_bal)
 
-if run_mode == "DCF":
-    result = dcf(
-        revenue_series=revenue.squeeze(),
-        ebit_series=ebit.squeeze(),
-        d_and_a_series=dna.squeeze() if not dna.empty else None,
-        shares_out=shares,
-        net_debt=net_debt,
-        wacc=float(wacc),
-        terminal_g=float(term_g),
-    )
-    implied = float(result["per_share"])
-    upside = (implied / data["price"] - 1) * 100 if data["price"] > 0 else np.nan
+# Run DCF and Multiples side-by-side
+result = dcf(
+    revenue_series=revenue.squeeze(),
+    ebit_series=ebit.squeeze(),
+    d_and_a_series=dna.squeeze() if not dna.empty else None,
+    shares_out=shares,
+    net_debt=net_debt,
+    wacc=float(wacc),
+    terminal_g=float(term_g),
+)
+implied_dcf = float(result["per_share"])
+upside_dcf = (implied_dcf / data["price"] - 1) * 100 if data["price"] > 0 else np.nan
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Implied price (DCF)", f"{implied:,.2f}", f"{upside:,.1f}% vs spot")
-    col2.metric("Enterprise Value (PV)", f"{result['enterprise_value']:,.0f}")
-    col3.metric("Equity Value", f"{result['equity_value']:,.0f}")
+ni = float(net_income.tail(1).sum())
+implied_pe = multiples_implied_price(ni, pe=S.FALLBACK_PE, shares_out=shares)
+upside_pe = (implied_pe / data["price"] - 1) * 100 if data["price"] > 0 else np.nan
 
-    years = list(range(1, len(result["fcf"]) + 1))
-    st.plotly_chart(line_fcf(years, result["fcf"]), use_container_width=True)
+m1, m2 = st.columns(2)
+m1.metric("Implied price (DCF)", f"{implied_dcf:,.2f}", f"{upside_dcf:,.1f}% vs spot")
+m2.metric("Implied price (P/E)", f"{implied_pe:,.2f}", f"{upside_pe:,.1f}% vs spot")
+st.caption(
+    "Sector median P/E not always available via yfinance; using S&P 500 median fallback (20x)."
+)
 
-    st.markdown("#### Sensitivity")
-    g_grid = np.linspace(g_min, g_max, 7)
-    w_grid = np.linspace(w_min, w_max, 7)
-    sens = growth_wacc_table(
-        revenue, ebit, dna if not dna.empty else None, shares, net_debt, g_grid, w_grid, term_g
-    )
-    st.plotly_chart(heatmap_sensitivity(sens), use_container_width=True)
-    st.dataframe(sens.style.format("{:.2f}"))
+ev_col, eq_col = st.columns(2)
+ev_col.metric("Enterprise Value (PV)", f"{result['enterprise_value']:,.0f}")
+eq_col.metric("Equity Value", f"{result['equity_value']:,.0f}")
 
-else:
-    ni = float(net_income.tail(1).sum())
-    implied = multiples_implied_price(ni, pe=S.FALLBACK_PE, shares_out=shares)
-    upside = (implied / data["price"] - 1) * 100 if data["price"] > 0 else np.nan
-    st.metric("Implied price (P/E)", f"{implied:,.2f}", f"{upside:,.1f}% vs spot")
-    st.caption(
-        "Sector median P/E not always available via yfinance; using S&P 500 median fallback (20x)."
-    )
+years = list(range(1, len(result["fcf"]) + 1))
+st.plotly_chart(line_fcf(years, result["fcf"]), use_container_width=True)
+
+st.markdown("#### Sensitivity")
+g_grid = np.linspace(g_min, g_max, 7)
+w_grid = np.linspace(w_min, w_max, 7)
+sens = growth_wacc_table(
+    revenue, ebit, dna if not dna.empty else None, shares, net_debt, g_grid, w_grid, term_g
+)
+st.plotly_chart(heatmap_sensitivity(sens), use_container_width=True)
+st.dataframe(sens.style.format("{:.2f}"))
 
 st.divider()
 st.markdown(
