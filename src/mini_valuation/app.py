@@ -107,3 +107,22 @@ st.divider()
 st.markdown(
     "**Notes**: Uses last reported annuals. Simple heuristics for Capex (5% of revenue) and ΔWC (1% of revenue). Tax 25%. UI lets you adjust WACC and terminal growth."
 )
+
+# Inject Newsreader for title with robust selectors
+st.markdown(
+    """
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root { --newsreader-font: 'Newsreader', serif; }
+/* Target Streamlit title variants */
+h1,
+div[data-testid="stMarkdownContainer"] h1,
+.stMarkdown h1,
+[data-testid="stAppViewContainer"] h1 {
+  font-family: var(--newsreader-font) !important;
+  font-weight: 700 !important;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
