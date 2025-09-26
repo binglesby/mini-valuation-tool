@@ -10,7 +10,7 @@ from mini_valuation.viz import line_fcf, heatmap_sensitivity
 
 S = get_settings()
 st.set_page_config(page_title="Mini Valuation Tool", layout="wide")
-st.title("📈 Mini Valuation Tool")
+st.title("Mini Valuation Tool")
 st.caption("Educational use only. Not investment advice.")
 
 with st.sidebar:
