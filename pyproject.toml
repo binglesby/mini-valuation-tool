@@ -28,3 +28,10 @@ line-length = 100
 python_version = "3.11"
 strict = true
 exclude = ["notebooks"]
+
+[tool.poetry]
+packages = [{ include = "mini_valuation", from = "src" }]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
