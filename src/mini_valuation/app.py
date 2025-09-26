@@ -8,6 +8,46 @@ from mini_valuation.valuation import dcf, multiples_implied_price
 from mini_valuation.sensitivities import growth_wacc_table
 from mini_valuation.viz import line_fcf, heatmap_sensitivity
 
+# Helpers for currency formatting with compact units and hover full value
+
+
+def _fmt_money(value: float) -> tuple[str, str]:
+    try:
+        n = float(value)
+    except (TypeError, ValueError):
+        return "$—", "$—"
+    absn = abs(n)
+    if absn >= 1_000_000_000_000:
+        disp = f"${n/1_000_000_000_000:.3f}T"
+    elif absn >= 1_000_000_000:
+        disp = f"${n/1_000_000_000:.3f}B"
+    elif absn >= 1_000_000:
+        disp = f"${n/1_000_000:.3f}M"
+    elif absn >= 1_000:
+        disp = f"${n/1_000:.3f}K"
+    else:
+        disp = f"${n:,.2f}"
+    full_ = f"${n:,.0f}"
+    return disp, full_
+
+
+# Render a compact currency metric card into a given container
+# Shows compact $ value and full value on hover via title attribute
+def _metric_card(container, label: str, value: float, delta_pct: float | None = None) -> None:
+    disp, full_ = _fmt_money(float(value))
+    delta_html = (
+        f'<div class="delta">{delta_pct:.1f}% vs spot</div>' if delta_pct is not None else ""
+    )
+    html = f"""
+<div class=\"metric-card\">
+  <div class=\"label\">{label}</div>
+  <div class=\"value\" title=\"{full_}\">{disp}</div>
+  {delta_html}
+</div>
+"""
+    container.markdown(html, unsafe_allow_html=True)
+
+
 S = get_settings()
 st.set_page_config(
     page_title="Mini Valuation Tool", layout="wide", initial_sidebar_state="expanded"
@@ -120,10 +160,10 @@ if run_mode == "DCF":
 
     # Inline metrics including Current price
     m_price, m1, m2, m3 = st.columns(4)
-    m_price.metric("Current price", f"{data['price']:,.2f}")
-    m1.metric("Implied price (DCF)", f"{implied:,.2f}", f"{upside:,.1f}% vs spot")
-    m2.metric("Enterprise Value (PV)", f"{result['enterprise_value']:,.0f}")
-    m3.metric("Equity Value", f"{result['equity_value']:,.0f}")
+    _metric_card(m_price, "Current price", float(data["price"]))
+    _metric_card(m1, "Implied price (DCF)", implied, upside)
+    _metric_card(m2, "Enterprise Value (PV)", float(result["enterprise_value"]))
+    _metric_card(m3, "Equity Value", float(result["equity_value"]))
 
     years = list(range(1, len(result["fcf"]) + 1))
     st.plotly_chart(line_fcf(years, result["fcf"]), use_container_width=True)
@@ -143,8 +183,8 @@ else:
     upside = (implied / data["price"] - 1) * 100 if data["price"] > 0 else np.nan
     # Inline metrics: Current price and P/E implied
     m_price, m_pe = st.columns(2)
-    m_price.metric("Current price", f"{data['price']:,.2f}")
-    m_pe.metric("Implied price (P/E)", f"{implied:,.2f}", f"{upside:,.1f}% vs spot")
+    _metric_card(m_price, "Current price", float(data["price"]))
+    _metric_card(m_pe, "Implied price (P/E)", implied, upside)
     st.caption(
         "Sector median P/E not always available via yfinance; using S&P 500 median fallback (20x)."
     )
@@ -175,6 +215,19 @@ html, body, [data-testid="stAppViewContainer"] :not(.material-icons):not(.materi
 [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.6rem !important; row-gap: 0.6rem !important; }
 /* Assumptions header: bold and slightly larger */
 .assumptions-header { font-weight: 600; font-size: 1.05rem; margin-top: 0.25rem; }
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+# Styles for custom metric cards
+st.markdown(
+    """
+<style>
+.metric-card { padding: 0.25rem 0; }
+.metric-card .label { font-size: 0.95rem; color: rgba(0,0,0,0.6); margin-bottom: 0.15rem; }
+.metric-card .value { font-size: 2.1rem; font-weight: 600; line-height: 1.1; }
+.metric-card .delta { margin-top: 0.2rem; font-size: 0.9rem; display: inline-block; padding: 0.1rem 0.35rem; border-radius: 999px; background: rgba(0,0,0,0.06); }
 </style>
 """,
     unsafe_allow_html=True,
