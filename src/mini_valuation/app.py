@@ -34,9 +34,12 @@ if not ticker:
 
 data = fetch_financials(ticker)
 # Title row: company name on left, model toggle on right
-left, right = st.columns([0.6, 0.4])
-left.subheader(data["name"])
-run_mode = right.radio("Model", ["DCF", "Multiples"], horizontal=True)
+left_col, mid_col, _ = st.columns([0.55, 0.35, 0.10])
+left_col.subheader(data["name"])
+try:
+    run_mode = mid_col.segmented_control("Model", options=["DCF", "Multiples"], default="DCF")
+except AttributeError:
+    run_mode = mid_col.radio("Model", ["DCF", "Multiples"], horizontal=True)
 
 st.write(f"Current price: **{data['price']:.2f}**")
 
