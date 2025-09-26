@@ -126,3 +126,25 @@ div[data-testid="stMarkdownContainer"] h1,
 """,
     unsafe_allow_html=True,
 )
+# Global Apple system fonts and condensed sidebar spacing
+st.markdown(
+    """
+<style>
+:root { --apple-font: -apple-system, BlinkMacSystemFont, "SF Pro Text","SF Pro Display","Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif; }
+/* Apply system font globally */
+html, body, [data-testid="stAppViewContainer"] * { font-family: var(--apple-font) !important; }
+/* Title (keep regular weight) */
+h1,
+div[data-testid="stMarkdownContainer"] h1,
+.stMarkdown h1,
+[data-testid="stAppViewContainer"] h1 {
+  font-family: var(--apple-font) !important;
+  font-weight: 400 !important;
+}
+/* Sidebar: reduce padding and vertical gaps */
+[data-testid="stSidebar"] .block-container { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.35rem !important; row-gap: 0.35rem !important; }
+</style>
+""",
+    unsafe_allow_html=True,
+)
