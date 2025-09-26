@@ -111,7 +111,7 @@ st.markdown(
 # Inject Newsreader for title with robust selectors
 st.markdown(
     """
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root { --newsreader-font: 'Newsreader', serif; }
 /* Target Streamlit title variants */
@@ -120,7 +120,7 @@ div[data-testid="stMarkdownContainer"] h1,
 .stMarkdown h1,
 [data-testid="stAppViewContainer"] h1 {
   font-family: var(--newsreader-font) !important;
-  font-weight: 700 !important;
+  font-weight: 400 !important;
 }
 </style>
 """,
