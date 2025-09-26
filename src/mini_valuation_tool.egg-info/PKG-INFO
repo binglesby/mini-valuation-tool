@@ -1,0 +1,21 @@
+Metadata-Version: 2.4
+Name: mini-valuation-tool
+Version: 0.1.0
+Requires-Python: >=3.11
+Requires-Dist: streamlit
+Requires-Dist: yfinance
+Requires-Dist: pandas
+Requires-Dist: numpy
+Requires-Dist: plotly
+Requires-Dist: pydantic
+Requires-Dist: pydantic-settings
+Requires-Dist: tenacity
+Requires-Dist: loguru
+Requires-Dist: diskcache
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: ruff; extra == "dev"
+Requires-Dist: black; extra == "dev"
+Requires-Dist: mypy; extra == "dev"
+Requires-Dist: types-requests; extra == "dev"
+Requires-Dist: ipykernel; extra == "dev"

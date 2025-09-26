@@ -1,0 +1,37 @@
+
+Collecting usage statistics. To deactivate, set browser.gatherUsageStats to false.
+
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://10.0.0.202:8501
+  External URL: http://76.151.190.28:8501
+
+  For better performance, install the Watchdog module:
+
+  $ xcode-select --install
+  $ pip install watchdog
+            
+2025-09-26 16:09:49.809 Uncaught app execution
+Traceback (most recent call last):
+  File "/Users/beninglesby/projects/valuation-tool/mini-valuation-tool/.venv/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 128, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/Users/beninglesby/projects/valuation-tool/mini-valuation-tool/.venv/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 669, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/beninglesby/projects/valuation-tool/mini-valuation-tool/src/mini_valuation/app.py", line 5, in <module>
+    from .settings import get_settings
+ImportError: attempted relative import with no known parent package
+2025-09-26 16:09:49.809 Uncaught app execution
+Traceback (most recent call last):
+  File "/Users/beninglesby/projects/valuation-tool/mini-valuation-tool/.venv/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 128, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+  File "/Users/beninglesby/projects/valuation-tool/mini-valuation-tool/.venv/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 669, in code_to_exec
+    exec(code, module.__dict__)  # noqa: S102
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/beninglesby/projects/valuation-tool/mini-valuation-tool/src/mini_valuation/app.py", line 5, in <module>
+    from .settings import get_settings
+ImportError: attempted relative import with no known parent package
