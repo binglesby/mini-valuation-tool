@@ -10,9 +10,28 @@ from mini_valuation.viz import line_fcf, heatmap_sensitivity
 
 S = get_settings()
 st.set_page_config(page_title="Mini Valuation Tool", layout="wide")
-st.title("Mini Valuation Tool")
-st.write("Created by Ben Inglesby")
-st.caption("Educational use only. Not investment advice.")
+st.title("Valuation Tool")
+st.write("Created by Ben Inglesby. Educational use only. Not investment advice.")
+try:
+    run_mode = st.segmented_control("Select Model", options=["DCF", "Multiples"], default="DCF")
+except AttributeError:
+    run_mode = st.radio("Select Model", ["DCF", "Multiples"], horizontal=True)
+# Style radio fallback as pills
+st.markdown(
+    """
+<style>
+[role=\"radiogroup\"] label {
+  background: rgba(0,0,0,0.04);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  margin-right: 0.35rem;
+}
+[role=\"radiogroup\"] input[type=\"radio\"] { visibility: hidden; width: 0; height: 0; }
+[role=\"radiogroup\"] label[data-checked=\"true\"] { background: #0e1116; color: white; }
+</style>
+""",
+    unsafe_allow_html=True,
+)
 
 with st.sidebar:
     ticker = st.text_input("Ticker", value="AAPL").strip()
@@ -33,13 +52,6 @@ if not ticker:
     st.stop()
 
 data = fetch_financials(ticker)
-# Title row: company name on left, model toggle on right
-left_col, mid_col, _ = st.columns([0.55, 0.35, 0.10])
-left_col.subheader(data["name"])
-try:
-    run_mode = mid_col.segmented_control("Model", options=["DCF", "Multiples"], default="DCF")
-except AttributeError:
-    run_mode = mid_col.radio("Model", ["DCF", "Multiples"], horizontal=True)
 
 st.write(f"Current price: **{data['price']:.2f}**")
 
