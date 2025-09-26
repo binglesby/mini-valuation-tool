@@ -2,11 +2,11 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import streamlit as st
-from .settings import get_settings
-from .data import fetch_financials
-from .valuation import dcf, multiples_implied_price
-from .sensitivities import growth_wacc_table
-from .viz import line_fcf, heatmap_sensitivity
+from mini_valuation.settings import get_settings
+from mini_valuation.data import fetch_financials
+from mini_valuation.valuation import dcf, multiples_implied_price
+from mini_valuation.sensitivities import growth_wacc_table
+from mini_valuation.viz import line_fcf, heatmap_sensitivity
 
 S = get_settings()
 st.set_page_config(page_title="Mini Valuation Tool", layout="wide")
