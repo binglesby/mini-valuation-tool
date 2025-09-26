@@ -9,12 +9,16 @@ def _ticker(ticker: str) -> yf.Ticker:
     return yf.Ticker(ticker)
 
 
+def _as_df(obj: object) -> pd.DataFrame:
+    return obj if isinstance(obj, pd.DataFrame) else pd.DataFrame()
+
+
 def fetch_financials(ticker: str) -> dict[str, pd.DataFrame | float]:
     tkr = _ticker(ticker)
-    income = tkr.financials or pd.DataFrame()
-    balance = tkr.balance_sheet or pd.DataFrame()
-    cash = tkr.cashflow or pd.DataFrame()
-    info = tkr.info or {}
+    income = _as_df(getattr(tkr, "financials", None))
+    balance = _as_df(getattr(tkr, "balance_sheet", None))
+    cash = _as_df(getattr(tkr, "cashflow", None))
+    info = getattr(tkr, "info", {}) or {}
     shares_out = float(info.get("sharesOutstanding") or 0.0)
     price = float(info.get("currentPrice") or 0.0)
     sector = info.get("sector") or ""
