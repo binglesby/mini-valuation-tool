@@ -10,7 +10,7 @@ from mini_valuation.viz import line_fcf, heatmap_sensitivity
 
 S = get_settings()
 st.set_page_config(page_title="Mini Valuation Tool", layout="wide")
-st.title("Mini Valuation Tool")
+st.title("Valuation Tool, created by Ben Inglesby")
 st.write("Created by Ben Inglesby")
 st.caption("Educational use only. Not investment advice.")
 
@@ -108,42 +108,29 @@ st.markdown(
     "**Notes**: Uses last reported annuals. Simple heuristics for Capex (5% of revenue) and ΔWC (1% of revenue). Tax 25%. UI lets you adjust WACC and terminal growth."
 )
 
-# Inject Newsreader for title with robust selectors
-st.markdown(
-    """
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-:root { --newsreader-font: 'Newsreader', serif; }
-/* Target Streamlit title variants */
-h1,
-div[data-testid="stMarkdownContainer"] h1,
-.stMarkdown h1,
-[data-testid="stAppViewContainer"] h1 {
-  font-family: var(--newsreader-font) !important;
-  font-weight: 400 !important;
-}
-</style>
-""",
-    unsafe_allow_html=True,
-)
-# Global Apple system fonts and condensed sidebar spacing
+# Global Apple system fonts, fix sidebar toggle icon, and consistent sidebar spacing
 st.markdown(
     """
 <style>
 :root { --apple-font: -apple-system, BlinkMacSystemFont, "SF Pro Text","SF Pro Display","Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif; }
-/* Apply system font globally */
-html, body, [data-testid="stAppViewContainer"] * { font-family: var(--apple-font) !important; }
-/* Title (keep regular weight) */
-h1,
-div[data-testid="stMarkdownContainer"] h1,
-.stMarkdown h1,
-[data-testid="stAppViewContainer"] h1 {
+/* Apply system font but preserve Material icon glyphs */
+html, body, [data-testid="stAppViewContainer"] :not(.material-icons):not(.material-icons-outlined):not(.material-icons-round):not(.material-icons-sharp):not(.material-symbols-outlined):not(.material-symbols-rounded):not(.material-symbols-sharp) {
   font-family: var(--apple-font) !important;
-  font-weight: 400 !important;
 }
-/* Sidebar: reduce padding and vertical gaps */
-[data-testid="stSidebar"] .block-container { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-[data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.35rem !important; row-gap: 0.35rem !important; }
+/* Ensure icon fonts render correctly */
+.material-icons, .material-icons-outlined, .material-icons-round, .material-icons-sharp,
+.material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp {
+  font-family: 'Material Symbols Outlined','Material Icons','Material Icons Outlined', sans-serif !important;
+  font-feature-settings: 'liga';
+  font-weight: normal;
+}
+/* Title regular weight */
+h1, div[data-testid="stMarkdownContainer"] h1, .stMarkdown h1, [data-testid="stAppViewContainer"] h1 { font-weight: 400 !important; }
+/* Sidebar spacing: moderate and consistent */
+[data-testid="stSidebar"] .block-container { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.6rem !important; row-gap: 0.6rem !important; }
+/* Assumptions header: bold and slightly larger */
+.assumptions-header { font-weight: 600; font-size: 1.05rem; margin-top: 0.25rem; }
 </style>
 """,
     unsafe_allow_html=True,
