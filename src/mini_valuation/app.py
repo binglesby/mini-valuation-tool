@@ -108,10 +108,7 @@ def _layout(fig: go.Figure, title: str | None = None) -> go.Figure:
 
 
 def _apply_billions_axis(fig: go.Figure) -> go.Figure:
-    """Format y-axis ticks as $X B/T/M instead of SI G.
-
-    Chooses a reasonable tick step and sets explicit tickvals/text.
-    """
+    """Format y-axis ticks as $M/$B/$T and ensure enough gridlines."""
     import numpy as _np
 
     values: list[float] = []
@@ -139,10 +136,33 @@ def _apply_billions_axis(fig: go.Figure) -> go.Figure:
     if hi == lo:
         hi = lo + 1.0
     span = hi - lo
-    # step of roughly 5 ticks, aligned to billions
-    raw_step = span / 5.0
-    step_b = max(1.0, round(raw_step / 1e9))  # in billions
-    step = step_b * 1e9
+
+    # Choose a step from a sensible ladder to target ~6-8 ticks
+    step_ladder = [
+        1e6,
+        2e6,
+        5e6,
+        1e7,
+        2e7,
+        5e7,
+        1e8,
+        2e8,
+        5e8,
+        1e9,
+        2e9,
+        5e9,
+        1e10,
+        2e10,
+        5e10,
+        1e11,
+        2e11,
+        5e11,
+        1e12,
+        2e12,
+        5e12,
+    ]
+    target = span / 7.0
+    step = next((s for s in step_ladder if s >= target), step_ladder[-1])
 
     start = int(_np.floor(lo / step))
     end = int(_np.ceil(hi / step))
@@ -159,7 +179,12 @@ def _apply_billions_axis(fig: go.Figure) -> go.Figure:
             return f"{sign}${av/1_000_000:.0f}M"
         return f"{sign}${av:,.0f}"
 
-    fig.update_yaxes(tickmode="array", tickvals=tickvals, ticktext=[_fmt_axis(v) for v in tickvals])
+    fig.update_yaxes(
+        tickmode="array",
+        tickvals=tickvals,
+        ticktext=[_fmt_axis(v) for v in tickvals],
+        showgrid=True,
+    )
     return fig
 
 
