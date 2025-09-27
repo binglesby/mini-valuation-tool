@@ -53,7 +53,9 @@ st.set_page_config(
     page_title="Mini Valuation Tool", layout="wide", initial_sidebar_state="expanded"
 )
 st.title("Valuation Tool")
-st.write("Created by Ben Inglesby. Educational use only. Not investment advice.")
+st.write(
+    "Created by Ben Inglesby, for educational use only. Input a company's ticker and adjust assumptions in the left sidebar. Not investment advice. "
+)
 
 # Model selector just under the caption
 try:
@@ -228,6 +230,18 @@ st.markdown(
 .metric-card .label { font-size: 0.95rem; color: rgba(0,0,0,0.6); margin-bottom: 0.15rem; }
 .metric-card .value { font-size: 2.1rem; font-weight: 600; line-height: 1.1; }
 .metric-card .delta { margin-top: 0.2rem; font-size: 0.9rem; display: inline-block; padding: 0.1rem 0.35rem; border-radius: 999px; background: rgba(0,0,0,0.06); }
+</style>
+""",
+    unsafe_allow_html=True,
+)
+st.markdown(
+    """
+<style>
+html [data-testid="stSidebarCollapsedControl"] { display: none !important; }
+button[title="Toggle sidebar"],
+button[aria-label="Toggle sidebar"],
+button[aria-label="Open sidebar"],
+button[aria-label="Close sidebar"] { display: none !important; }
 </style>
 """,
     unsafe_allow_html=True,
