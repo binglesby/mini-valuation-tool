@@ -93,21 +93,64 @@ h1, div[data-testid="stMarkdownContainer"] h1, .stMarkdown h1, [data-testid="stA
 )
 
 with st.sidebar:
+    st.markdown("**Company & Valuation Settings**")
     ticker = st.text_input("Ticker", value="AAPL").strip()
-    wacc = st.slider("WACC", 0.04, 0.14, S.DEFAULT_WACC, 0.005)
-    term_g = st.slider("Terminal growth", 0.0, 0.04, S.DEFAULT_TERMINAL_G, 0.005)
-    st.divider()
-    st.write("Sensitivity (DCF)")
-    g_min, g_max = st.slider("Revenue growth range", -0.02, 0.20, (0.03, 0.10), 0.005)
-    w_min, w_max = st.slider("WACC range", 0.05, 0.15, (0.07, 0.11), 0.005)
-    st.divider()
-    st.markdown('<div class="assumptions-header">Assumptions</div>', unsafe_allow_html=True)
-    tax_rate = st.slider("Tax rate", 0.0, 0.40, float(S.TAX_RATE), 0.005)
-    capex_pct_sales = st.slider("Capex (% of revenue)", 0.0, 0.15, float(S.CAPEX_PCT_SALES), 0.005)
-    delta_wc_pct_sales = st.slider(
-        "ΔWC (% of revenue)", -0.05, 0.10, float(S.DELTA_WC_PCT_SALES), 0.005
+    wacc_pct = st.slider(
+        "WACC",
+        4.0,
+        14.0,
+        float(S.DEFAULT_WACC * 100),
+        0.5,
+        format="%.1f%%",
     )
+    wacc = wacc_pct / 100.0
+    term_pct = st.slider(
+        "Terminal growth",
+        0.0,
+        4.0,
+        float(S.DEFAULT_TERMINAL_G * 100),
+        0.5,
+        format="%.1f%%",
+    )
+    term_g = term_pct / 100.0
     fallback_pe = st.slider("Fallback P/E", 5.0, 40.0, float(S.FALLBACK_PE), 1.0)
+
+    st.divider()
+
+    st.markdown("**Sensitivity Ranges**")
+    rev_range_pct = st.slider(
+        "Revenue growth range",
+        -2.0,
+        20.0,
+        (3.0, 10.0),
+        0.5,
+        format="%.1f%%",
+    )
+    g_min, g_max = (rev_range_pct[0] / 100.0, rev_range_pct[1] / 100.0)
+
+    wacc_range_pct = st.slider(
+        "WACC range",
+        5.0,
+        15.0,
+        (7.0, 11.0),
+        0.5,
+        format="%.1f%%",
+    )
+    w_min, w_max = (wacc_range_pct[0] / 100.0, wacc_range_pct[1] / 100.0)
+
+    st.divider()
+
+    st.markdown("**Operating Assumptions**")
+    tax_pct = st.slider("Tax rate", 0.0, 40.0, float(S.TAX_RATE * 100), 0.5, format="%.1f%%")
+    tax_rate = tax_pct / 100.0
+    capex_pct = st.slider(
+        "Capex (% of revenue)", 0.0, 15.0, float(S.CAPEX_PCT_SALES * 100), 0.5, format="%.1f%%"
+    )
+    capex_pct_sales = capex_pct / 100.0
+    delta_wc_pct = st.slider(
+        "ΔWC (% of revenue)", -5.0, 10.0, float(S.DELTA_WC_PCT_SALES * 100), 0.5, format="%.1f%%"
+    )
+    delta_wc_pct_sales = delta_wc_pct / 100.0
 
 if not ticker:
     st.stop()
@@ -282,6 +325,19 @@ body [aria-label*="sidebar"] * {
   height: 0 !important;
   overflow: hidden !important;
 }
+</style>
+""",
+    unsafe_allow_html=True,
+)
+st.markdown(
+    """
+<style>
+/* Compact sidebar spacing */
+[data-testid="stSidebar"] .stSlider > label,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] .stTextInput > label { font-size: 0.9rem !important; margin-bottom: 0.15rem !important; }
+[data-testid="stSidebar"] .block-container { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.4rem !important; row-gap: 0.4rem !important; }
 </style>
 """,
     unsafe_allow_html=True,
