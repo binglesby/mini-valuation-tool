@@ -484,7 +484,7 @@ if run_mode == "DCF":
         )
     )
     fig_hm.update_layout(
-        title="Growth-WACCPrice Surface<br><sup>Implied share price for each growth-discount pair</sup>",
+        title="Growth-WACC Price Surface<br><sup>Implied share price for each growth-discount pair</sup>",
         xaxis_title="WACC (%)",
         yaxis_title="Growth (%)",
         margin=dict(l=20, r=20, t=40, b=20),
@@ -543,7 +543,7 @@ if run_mode == "DCF":
     )
     fig_tornado.update_layout(
         barmode="overlay",
-        title="Univariate WACC & Terminal Growth Sensitivity<br><sup>Implied price response to ±50 bps WACC and terminal growth</sup>",
+        title="Univariate WACC & Terminal Growth Sensitivity<br><sup>Implied share price response to ±50 bps WACC and terminal growth</sup>",
         xaxis_title="Price ($)",
         yaxis_title="",
         showlegend=False,
@@ -560,6 +560,21 @@ if run_mode == "DCF":
     )
     fig_tornado.add_annotation(
         x=g_max, y=1, text=f"${g_max:,.2f}", showarrow=False, xanchor="left", yshift=10
+    )
+    # Ensure category order and add explicit left label for Terminal g
+    fig_tornado.update_yaxes(
+        categoryorder="array",
+        categoryarray=["WACC ±50 bps", "Terminal g ±50 bps"],
+    )
+    fig_tornado.add_annotation(
+        xref="paper",
+        x=0,
+        xanchor="right",
+        yref="y",
+        y="Terminal g ±50 bps",
+        text="Terminal g ±50 bps",
+        showarrow=False,
+        align="right",
     )
     fig_tornado.update_layout(height=220)
     main_area.plotly_chart(fig_tornado, use_container_width=True, config=CONFIG_MINIMAL)
