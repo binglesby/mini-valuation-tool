@@ -372,3 +372,29 @@ header [data-testid="stExpanderSidebarButton"] [data-testid="stIconMaterial"]::b
 """,
     unsafe_allow_html=True,
 )
+st.markdown(
+    """
+<script>
+(function () {
+  const apply = (root) => {
+    const nodes = (root || document).querySelectorAll('[data-testid="stIconMaterial"]');
+    nodes.forEach((n) => {
+      const t = (n.textContent || '').trim();
+      if (t !== '»') {
+        n.textContent = '»';            // simple double-angle icon
+        n.style.fontSize = '18px';
+        n.style.lineHeight = '1';
+        n.style.fontFamily = 'inherit';
+      }
+    });
+  };
+  const mo = new MutationObserver((muts) => {
+    for (const m of muts) apply(m.target);
+  });
+  apply();
+  mo.observe(document.body, { subtree: true, childList: true, characterData: true });
+})();
+</script>
+""",
+    unsafe_allow_html=True,
+)
