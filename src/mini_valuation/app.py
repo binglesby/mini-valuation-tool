@@ -68,6 +68,45 @@ def _metric_percent(container, label: str, pct_value: float) -> None:
     container.markdown(html, unsafe_allow_html=True)
 
 
+# Visual styling helpers/constants
+BLUE = "rgba(37, 99, 235, 1)"
+LTBLU = "rgba(96, 165, 250, 1)"
+GREEN = "rgba(34, 197, 94, 1)"
+RED = "rgba(239, 68, 68, 1)"
+GRID = "rgba(0,0,0,0.06)"
+
+CONFIG_MINIMAL = {
+    "displaylogo": False,
+    "modeBarButtonsToRemove": [
+        "lasso2d",
+        "select2d",
+        "autoScale2d",
+        "zoom2d",
+        "pan2d",
+        "zoomIn2d",
+        "zoomOut2d",
+        "resetScale2d",
+        "toImage",
+    ],
+}
+
+
+def _layout(fig: go.Figure, title: str | None = None) -> go.Figure:
+    fig.update_layout(
+        title=title,
+        margin=dict(l=10, r=10, t=35, b=10),
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+        font=dict(size=13),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0),
+        uniformtext_minsize=10,
+        uniformtext_mode="hide",
+    )
+    fig.update_xaxes(showgrid=True, gridcolor=GRID)
+    fig.update_yaxes(showgrid=True, gridcolor=GRID)
+    return fig
+
+
 S = get_settings()
 st.set_page_config(
     page_title="Mini Valuation Tool", layout="wide", initial_sidebar_state="expanded"
@@ -125,10 +164,18 @@ st.markdown(
 with left_panel:
     st.markdown("**Company & Valuation Settings**")
     ticker = st.text_input("Ticker", value="AAPL").strip()
-    wacc_pct = st.slider("WACC", 4.0, 14.0, float(S.DEFAULT_WACC * 100), 0.5, format="%.1f%%")
+    wacc_pct = st.slider(
+        "WACC", 4.0, 14.0, float(S.DEFAULT_WACC * 100), 0.5, format="%.1f%%", key="wacc_pct"
+    )
     wacc = wacc_pct / 100.0
     term_pct = st.slider(
-        "Terminal growth", 0.0, 4.0, float(S.DEFAULT_TERMINAL_G * 100), 0.5, format="%.1f%%"
+        "Terminal growth",
+        0.0,
+        4.0,
+        float(S.DEFAULT_TERMINAL_G * 100),
+        0.5,
+        format="%.1f%%",
+        key="term_pct",
     )
     term_g = term_pct / 100.0
     fallback_pe = st.slider("Fallback P/E", 5.0, 40.0, float(S.FALLBACK_PE), 1.0)
@@ -143,14 +190,28 @@ with left_panel:
 
     st.divider()
     st.markdown("**Operating Assumptions**")
-    tax_pct = st.slider("Tax rate", 0.0, 40.0, float(S.TAX_RATE * 100), 0.5, format="%.1f%%")
+    tax_pct = st.slider(
+        "Tax rate", 0.0, 40.0, float(S.TAX_RATE * 100), 0.5, format="%.1f%%", key="tax_pct"
+    )
     tax_rate = tax_pct / 100.0
     capex_pct = st.slider(
-        "Capex (% of revenue)", 0.0, 15.0, float(S.CAPEX_PCT_SALES * 100), 0.5, format="%.1f%%"
+        "Capex (% of revenue)",
+        0.0,
+        15.0,
+        float(S.CAPEX_PCT_SALES * 100),
+        0.5,
+        format="%.1f%%",
+        key="capex_pct",
     )
     capex_pct_sales = capex_pct / 100.0
     delta_wc_pct = st.slider(
-        "ΔWC (% of revenue)", -5.0, 10.0, float(S.DELTA_WC_PCT_SALES * 100), 0.5, format="%.1f%%"
+        "ΔWC (% of revenue)",
+        -5.0,
+        10.0,
+        float(S.DELTA_WC_PCT_SALES * 100),
+        0.5,
+        format="%.1f%%",
+        key="delta_wc_pct",
     )
     delta_wc_pct_sales = delta_wc_pct / 100.0
 
@@ -162,6 +223,10 @@ data = fetch_financials(ticker)
 # Company title always visible
 with main_area:
     st.subheader(data["name"])
+    # Microcaption of inputs
+    st.caption(
+        f"Inputs: WACC {wacc*100:.1f}% • g {term_g*100:.1f}% • Tax {tax_rate*100:.0f}% • Capex {capex_pct_sales*100:.0f}% rev • ΔWC {delta_wc_pct_sales*100:.0f}% rev"
+    )
 
 income: pd.DataFrame = data["income"]
 balance: pd.DataFrame = data["balance"]
@@ -215,7 +280,8 @@ if run_mode == "DCF":
 
     # Summary row (KPIs)
     k1, k2, k3, k4, k5 = main_area.columns(5)
-    _metric_card(k1, "Implied price (DCF)", implied, upside)
+    _metric_card(k1, "Implied price (DCF)", implied, None)
+    # Only keep upside pill on KPI row
     _metric_percent(k2, "Upside/Downside vs spot", upside)
     _metric_card(k3, "Enterprise Value (PV)", float(result["enterprise_value"]))
     _metric_card(k4, "Equity Value", float(result["equity_value"]))
@@ -247,7 +313,7 @@ if run_mode == "DCF":
         margin=dict(l=20, r=20, t=60, b=20),
     )
     fig_fcf.update_yaxes(tickformat="$~s", gridcolor="#e0e0e0")
-    c_left.plotly_chart(fig_fcf, use_container_width=True)
+    c_left.plotly_chart(fig_fcf, use_container_width=True, config=CONFIG_MINIMAL)
 
     # 2) EV composition (stacked bar): PV of explicit FCFs vs PV of terminal value
     pv_fcfs_sum = (
@@ -268,7 +334,7 @@ if run_mode == "DCF":
     )
     fig_stack.update_yaxes(ticksuffix="%", gridcolor="#e0e0e0")
     fig_stack.update_traces(texttemplate="%{percentY:.0%}", textposition="inside")
-    c_mid.plotly_chart(fig_stack, use_container_width=True)
+    c_mid.plotly_chart(fig_stack, use_container_width=True, config=CONFIG_MINIMAL)
 
     # 3) EV → Equity waterfall
     base_ev = float(result["enterprise_value"])
@@ -306,7 +372,7 @@ if run_mode == "DCF":
         showarrow=False,
         yshift=20,
     )
-    c_right.plotly_chart(fig_wf, use_container_width=True)
+    c_right.plotly_chart(fig_wf, use_container_width=True, config=CONFIG_MINIMAL)
 
     # Sensitivity block
     main_area.markdown("#### Sensitivity")
@@ -351,7 +417,8 @@ if run_mode == "DCF":
         yaxis_title="Growth (rows)",
         margin=dict(l=20, r=20, t=40, b=20),
     )
-    main_area.plotly_chart(fig_hm, use_container_width=True)
+    # Full-width heatmap directly under the top row; use_container_width keeps it wide
+    main_area.plotly_chart(fig_hm, use_container_width=True, config=CONFIG_MINIMAL)
     main_area.dataframe(sens.style.format("${:,.2f}"))
 
     # Mini tornado (±50 bps) for WACC and Terminal growth
@@ -391,6 +458,10 @@ if run_mode == "DCF":
     g_min, g_max = (min(p_g_low, p_g_high), max(p_g_low, p_g_high))
 
     fig_tornado = go.Figure()
+    # vertical base line at current implied price
+    fig_tornado.add_shape(
+        type="line", x0=implied, x1=implied, y0=-0.5, y1=1.5, line=dict(color=GRID, width=1)
+    )
     fig_tornado.add_bar(
         y=["WACC ±50 bps"], x=[w_max - w_min], base=[w_min], orientation="h", name="WACC"
     )
@@ -421,7 +492,8 @@ if run_mode == "DCF":
     fig_tornado.add_annotation(
         x=g_max, y=1, text=f"${g_max:,.2f}", showarrow=False, xanchor="left", yshift=10
     )
-    main_area.plotly_chart(fig_tornado, use_container_width=True)
+    fig_tornado.update_layout(height=220)
+    main_area.plotly_chart(fig_tornado, use_container_width=True, config=CONFIG_MINIMAL)
 
 else:
     ni = float(net_income.tail(1).sum())
