@@ -85,8 +85,6 @@ h1, div[data-testid="stMarkdownContainer"] h1, .stMarkdown h1, [data-testid="stA
 }
 [role="radiogroup"] input[type="radio"] { visibility: hidden; width: 0; height: 0; }
 [role="radiogroup"] label[data-checked="true"] { background: #0A84FF; color: #fff; }
-/* Always keep sidebar open: hide collapse control */
-[data-testid="stSidebarCollapsedControl"] { display: none !important; }
 </style>
 """,
     unsafe_allow_html=True,
@@ -260,6 +258,12 @@ html, body, [data-testid="stAppViewContainer"] :not(.material-icons):not(.materi
 [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.6rem !important; row-gap: 0.6rem !important; }
 /* Assumptions header: bold and slightly larger */
 .assumptions-header { font-weight: 600; font-size: 1.05rem; margin-top: 0.25rem; }
+/* Reduce extra bottom space in sidebar */
+[data-testid="stSidebar"] .block-container { padding-bottom: 0.25rem !important; }
+/* Rename sidebar toggle tooltip/label by replacing icon glyph text when present */
+[data-testid="stSidebarCollapsedControl"] span[class*="material"],
+header [title*="sidebar"] span[class*="material"] { font-family: inherit !important; }
+header [title*="sidebar"] span[class*="material"]::before { content: "Controls"; }
 </style>
 """,
     unsafe_allow_html=True,
@@ -273,71 +277,6 @@ st.markdown(
 .metric-card .label { font-size: 0.95rem; color: rgba(0,0,0,0.6); margin-bottom: 0.15rem; }
 .metric-card .value { font-size: 2.1rem; font-weight: 600; line-height: 1.1; }
 .metric-card .delta { margin-top: 0.2rem; font-size: 0.9rem; display: inline-block; padding: 0.1rem 0.35rem; border-radius: 999px; background: rgba(0,0,0,0.06); }
-</style>
-""",
-    unsafe_allow_html=True,
-)
-st.markdown(
-    """
-<style>
-html [data-testid="stSidebarCollapsedControl"] { display: none !important; }
-button[title="Toggle sidebar"],
-button[aria-label="Toggle sidebar"],
-button[aria-label="Open sidebar"],
-button[aria-label="Close sidebar"] { display: none !important; }
-</style>
-""",
-    unsafe_allow_html=True,
-)
-
-# Stronger override to hide any sidebar toggle button and keep sidebar open
-st.markdown(
-    """
-<style>
-/* Hide any variant of the sidebar toggle button */
-[data-testid="stSidebarCollapsedControl"],
-button[title="Toggle sidebar"],
-button[aria-label*="sidebar"],
-header [data-testid="baseButton-secondary"]:has(span[class*="material"][aria-hidden="true"]) { display: none !important; }
-/* Ensure sidebar stays visible */
-section[data-testid="stSidebar"] { transform: translateX(0) !important; visibility: visible !important; }
-</style>
-""",
-    unsafe_allow_html=True,
-)
-st.markdown(
-    """
-<style>
-/* Final kill switch for the sidebar toggle control (all states/children) */
-[data-testid="stSidebarCollapsedControl"],
-[data-testid="stSidebarCollapsedControl"] *,
-section[data-testid="stSidebar"] [data-testid="stSidebarCollapsedControl"],
-section[data-testid="stSidebar"] [data-testid="stSidebarCollapsedControl"] *,
-body [title*="sidebar"],
-body [aria-label*="sidebar"],
-body [title*="sidebar"] *,
-body [aria-label*="sidebar"] * {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  width: 0 !important;
-  height: 0 !important;
-  overflow: hidden !important;
-}
-</style>
-""",
-    unsafe_allow_html=True,
-)
-st.markdown(
-    """
-<style>
-/* Compact sidebar spacing */
-[data-testid="stSidebar"] .stSlider > label,
-[data-testid="stSidebar"] label,
-[data-testid="stSidebar"] .stTextInput > label { font-size: 0.9rem !important; margin-bottom: 0.15rem !important; }
-[data-testid="stSidebar"] .block-container { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
-[data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.4rem !important; row-gap: 0.4rem !important; }
 </style>
 """,
     unsafe_allow_html=True,
