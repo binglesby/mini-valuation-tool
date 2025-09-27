@@ -271,6 +271,75 @@ if run_mode == "DCF":
     main_area.plotly_chart(heatmap_sensitivity(sens), use_container_width=True)
     main_area.dataframe(sens.style.format("{:.2f}"))
 
+    # Mini tornado (±50 bps) for WACC and Terminal growth
+    main_area.markdown("#### Mini tornado (±50 bps)")
+
+    def _price_at(w: float, g: float) -> float:
+        # Clamp to valid space: wacc must exceed terminal_g slightly
+        eps = 1e-6
+        w = max(float(w), float(g) + eps)
+        res = dcf(
+            revenue_series=revenue.squeeze(),
+            ebit_series=ebit.squeeze(),
+            d_and_a_series=dna.squeeze() if not dna.empty else None,
+            shares_out=shares,
+            net_debt=net_debt,
+            wacc=w,
+            terminal_g=g,
+            tax_rate=float(tax_rate),
+            capex_pct_sales=float(capex_pct_sales),
+            delta_wc_pct_sales=float(delta_wc_pct_sales),
+        )
+        return float(res["per_share"])
+
+    bps = 0.005
+    # WACC shock
+    w_low = max(0.0, float(wacc) - bps)
+    w_high = float(wacc) + bps
+    p_w_low = _price_at(w_low, float(term_g))
+    p_w_high = _price_at(w_high, float(term_g))
+    w_min, w_max = (min(p_w_low, p_w_high), max(p_w_low, p_w_high))
+
+    # Terminal growth shock (cap at wacc - tiny eps)
+    g_low = max(0.0, float(term_g) - bps)
+    g_high = min(float(wacc) - 1e-6, float(term_g) + bps)
+    p_g_low = _price_at(float(wacc), g_low)
+    p_g_high = _price_at(float(wacc), g_high)
+    g_min, g_max = (min(p_g_low, p_g_high), max(p_g_low, p_g_high))
+
+    fig_tornado = go.Figure()
+    fig_tornado.add_bar(
+        y=["WACC ±50 bps"], x=[w_max - w_min], base=[w_min], orientation="h", name="WACC"
+    )
+    fig_tornado.add_bar(
+        y=["Terminal g ±50 bps"],
+        x=[g_max - g_min],
+        base=[g_min],
+        orientation="h",
+        name="Terminal g",
+    )
+    fig_tornado.update_layout(
+        barmode="overlay",
+        title="Implied Price Sensitivity",
+        xaxis_title="Price ($)",
+        yaxis_title="",
+        showlegend=False,
+    )
+    # Annotations for endpoints
+    fig_tornado.add_annotation(
+        x=w_min, y=0, text=f"${w_min:,.2f}", showarrow=False, xanchor="right", yshift=10
+    )
+    fig_tornado.add_annotation(
+        x=w_max, y=0, text=f"${w_max:,.2f}", showarrow=False, xanchor="left", yshift=10
+    )
+    fig_tornado.add_annotation(
+        x=g_min, y=1, text=f"${g_min:,.2f}", showarrow=False, xanchor="right", yshift=10
+    )
+    fig_tornado.add_annotation(
+        x=g_max, y=1, text=f"${g_max:,.2f}", showarrow=False, xanchor="left", yshift=10
+    )
+    main_area.plotly_chart(fig_tornado, use_container_width=True)
+
 else:
     ni = float(net_income.tail(1).sum())
     implied = multiples_implied_price(ni, pe=float(fallback_pe), shares_out=shares)
