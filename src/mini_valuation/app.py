@@ -107,6 +107,62 @@ def _layout(fig: go.Figure, title: str | None = None) -> go.Figure:
     return fig
 
 
+def _apply_billions_axis(fig: go.Figure) -> go.Figure:
+    """Format y-axis ticks as $X B/T/M instead of SI G.
+
+    Chooses a reasonable tick step and sets explicit tickvals/text.
+    """
+    import numpy as _np
+
+    values: list[float] = []
+    for tr in getattr(fig, "data", []):
+        y = getattr(tr, "y", None)
+        if y is None:
+            continue
+        try:
+            arr = _np.array(y, dtype=float)
+        except Exception:
+            continue
+        if arr.size:
+            values.append(arr)
+
+    if not values:
+        return fig
+
+    allv = _np.concatenate(values)
+    allv = allv[_np.isfinite(allv)]
+    if allv.size == 0:
+        return fig
+
+    lo = float(min(0.0, _np.nanmin(allv)))
+    hi = float(max(0.0, _np.nanmax(allv)))
+    if hi == lo:
+        hi = lo + 1.0
+    span = hi - lo
+    # step of roughly 5 ticks, aligned to billions
+    raw_step = span / 5.0
+    step_b = max(1.0, round(raw_step / 1e9))  # in billions
+    step = step_b * 1e9
+
+    start = int(_np.floor(lo / step))
+    end = int(_np.ceil(hi / step))
+    tickvals = [i * step for i in range(start, end + 1)]
+
+    def _fmt_axis(v: float) -> str:
+        sign = "-" if v < 0 else ""
+        av = abs(v)
+        if av >= 1_000_000_000_000:
+            return f"{sign}${av/1_000_000_000_000:.1f}T"
+        if av >= 1_000_000_000:
+            return f"{sign}${av/1_000_000_000:.0f}B"
+        if av >= 1_000_000:
+            return f"{sign}${av/1_000_000:.0f}M"
+        return f"{sign}${av:,.0f}"
+
+    fig.update_yaxes(tickmode="array", tickvals=tickvals, ticktext=[_fmt_axis(v) for v in tickvals])
+    return fig
+
+
 S = get_settings()
 st.set_page_config(
     page_title="Mini Valuation Tool", layout="wide", initial_sidebar_state="expanded"
@@ -310,7 +366,8 @@ if run_mode == "DCF":
         legend=dict(x=0.99, y=0.99, xanchor="right", yanchor="top"),
         margin=dict(l=20, r=20, t=60, b=20),
     )
-    fig_fcf.update_yaxes(tickformat="$~s", gridcolor="#e0e0e0")
+    fig_fcf.update_yaxes(gridcolor="#e0e0e0")
+    fig_fcf = _apply_billions_axis(fig_fcf)
     main_area.plotly_chart(fig_fcf, use_container_width=True, config=CONFIG_MINIMAL)
 
     # Row for EV visuals under FCF
@@ -324,8 +381,25 @@ if run_mode == "DCF":
     )  # safety
     pv_tv = float(result["pv_tv"])
     fig_stack = go.Figure()
-    fig_stack.add_bar(x=["Mix"], y=[pv_fcfs_sum], name="PV of FCFs", marker_color="#1f77b4")
-    fig_stack.add_bar(x=["Mix"], y=[pv_tv], name="PV of Terminal", marker_color="#7fb3d5")
+    total_mix = max(1e-12, pv_fcfs_sum + pv_tv)
+    pct_fcfs = pv_fcfs_sum / total_mix
+    pct_tv = pv_tv / total_mix
+    fig_stack.add_bar(
+        x=["Mix"],
+        y=[pv_fcfs_sum],
+        name="PV of FCFs",
+        marker_color="#1f77b4",
+        text=[f"{pct_fcfs:.0%}"],
+        textposition="inside",
+    )
+    fig_stack.add_bar(
+        x=["Mix"],
+        y=[pv_tv],
+        name="PV of Terminal",
+        marker_color="#7fb3d5",
+        text=[f"{pct_tv:.0%}"],
+        textposition="inside",
+    )
     fig_stack.update_layout(
         barmode="stack",
         barnorm="percent",
@@ -334,7 +408,6 @@ if run_mode == "DCF":
         margin=dict(l=20, r=20, t=60, b=20),
     )
     fig_stack.update_yaxes(ticksuffix="%", gridcolor="#e0e0e0")
-    fig_stack.update_traces(texttemplate="%{percentY:.0%}", textposition="inside")
     fig_stack.update_layout(showlegend=False)
     ev_left.plotly_chart(fig_stack, use_container_width=True, config=CONFIG_MINIMAL)
 
@@ -346,18 +419,12 @@ if run_mode == "DCF":
             orientation="v",
             measure=["relative", "relative", "relative", "total"],
             x=["EV", "+Cash", "-Debt", "Equity"],
-            text=[
-                f"EV ${base_ev/1e9:,.1f}B",
-                f"+Cash ${cash_bal/1e9:,.1f}B",
-                f"-Debt ${debt/1e9:,.1f}B",
-                f"Equity ${float(result['equity_value'])/1e9:,.1f}B",
-            ],
-            textposition="outside",
             y=[base_ev, float(cash_bal), -float(debt), 0.0],
             connector=dict(line=dict(color="#9e9e9e")),
             increasing=dict(marker=dict(color="#2e7d32")),  # cash (green)
             decreasing=dict(marker=dict(color="#c62828")),  # debt (red)
             totals=dict(marker=dict(color="#1f77b4")),  # EV/Equity (blue)
+            text="",
         )
     )
     fig_wf.update_layout(
@@ -365,15 +432,8 @@ if run_mode == "DCF":
         legend=dict(x=0.99, y=0.99, xanchor="right", yanchor="top"),
         margin=dict(l=20, r=20, t=60, b=20),
     )
-    fig_wf.update_yaxes(gridcolor="#e0e0e0", tickformat="$~s")
-    # Add implied price annotation
-    fig_wf.add_annotation(
-        x=3,
-        y=float(result["equity_value"]),
-        text=f"Shares: {shares:,.0f} • Price/Share: ${implied:,.2f}",
-        showarrow=False,
-        yshift=20,
-    )
+    fig_wf.update_yaxes(gridcolor="#e0e0e0")
+    fig_wf = _apply_billions_axis(fig_wf)
     # Remove all in-chart labels from the waterfall
     fig_wf.update_traces(text="")
     ev_right.plotly_chart(fig_wf, use_container_width=True, config=CONFIG_MINIMAL)
@@ -400,8 +460,8 @@ if run_mode == "DCF":
     )
     fig_hm.update_layout(
         title="Sensitivity heatmap",
-        xaxis_title="WACC (cols)",
-        yaxis_title="Growth (rows)",
+        xaxis_title="WACC (%)",
+        yaxis_title="Growth (%)",
         margin=dict(l=20, r=20, t=40, b=20),
     )
     # Full-width heatmap directly under the top row; use_container_width keeps it wide
