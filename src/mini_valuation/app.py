@@ -2,6 +2,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 import numpy as np
+import plotly.graph_objects as go
 import pandas as pd
 import streamlit as st
 
@@ -51,6 +52,17 @@ def _metric_card(container, label: str, value: float, delta_pct: float | None = 
   <div class=\"label\">{label}</div>
   <div class=\"value\" title=\"{full_}\">{disp}</div>
   {delta_html}
+</div>
+"""
+    container.markdown(html, unsafe_allow_html=True)
+
+
+def _metric_percent(container, label: str, pct_value: float) -> None:
+    pct_str = f"{pct_value:.1f}%" if np.isfinite(pct_value) else "—"
+    html = f"""
+<div class=\"metric-card\">
+  <div class=\"label\">{label}</div>
+  <div class=\"value\">{pct_str}</div>
 </div>
 """
     container.markdown(html, unsafe_allow_html=True)
@@ -194,16 +206,62 @@ if run_mode == "DCF":
     implied = float(result["per_share"])
     upside = (implied / data["price"] - 1) * 100 if data["price"] > 0 else np.nan
 
-    # Inline metrics including Current price
-    m_price, m1, m2, m3 = main_area.columns(4)
-    _metric_card(m_price, "Current price", float(data["price"]))
-    _metric_card(m1, "Implied price (DCF)", implied, upside)
-    _metric_card(m2, "Enterprise Value (PV)", float(result["enterprise_value"]))
-    _metric_card(m3, "Equity Value", float(result["equity_value"]))
+    # Summary row (KPIs)
+    k1, k2, k3, k4, k5 = main_area.columns(5)
+    _metric_card(k1, "Implied price (DCF)", implied, upside)
+    _metric_percent(k2, "Upside/Downside vs spot", upside)
+    _metric_card(k3, "Enterprise Value (PV)", float(result["enterprise_value"]))
+    _metric_card(k4, "Equity Value", float(result["equity_value"]))
+    tv_share = (
+        float(result["pv_tv"]) / float(result["enterprise_value"])
+        if result["enterprise_value"]
+        else np.nan
+    )
+    _metric_percent(k5, "TV share of EV", tv_share * 100.0 if np.isfinite(tv_share) else np.nan)
 
+    # Core charts
+    c_left, c_mid, c_right = main_area.columns([0.34, 0.33, 0.33])
+
+    # 1) Projected Free Cash Flow (existing)
     years = list(range(1, len(result["fcf"]) + 1))
-    main_area.plotly_chart(line_fcf(years, result["fcf"]), use_container_width=True)
+    c_left.plotly_chart(line_fcf(years, result["fcf"]), use_container_width=True)
 
+    # 2) EV composition (stacked bar): PV of explicit FCFs vs PV of terminal value
+    pv_fcfs_sum = (
+        float(np.nansum(result["pv_fcfs"]))
+        if isinstance(result["pv_fcfs"], np.ndarray)
+        else float(result["pv_fcfs"])
+    )  # safety
+    pv_tv = float(result["pv_tv"])
+    fig_stack = go.Figure()
+    fig_stack.add_bar(x=["EV"], y=[pv_fcfs_sum], name="PV of FCFs")
+    fig_stack.add_bar(x=["EV"], y=[pv_tv], name="PV of Terminal")
+    fig_stack.update_layout(barmode="stack", title="EV Composition", yaxis_title="$")
+    c_mid.plotly_chart(fig_stack, use_container_width=True)
+
+    # 3) EV → Equity waterfall
+    fig_wf = go.Figure(
+        go.Waterfall(
+            name="EV→Equity",
+            orientation="v",
+            measure=["relative", "relative", "relative", "total"],
+            x=["EV", "+Cash", "-Debt", "Equity"],
+            textposition="outside",
+            y=[float(result["enterprise_value"]), float(cash_bal), -float(debt), 0.0],
+        )
+    )
+    fig_wf.update_layout(title="EV → Equity Bridge")
+    # Add implied price annotation
+    fig_wf.add_annotation(
+        x=3,
+        y=float(result["equity_value"]),
+        text=f"Price/Share: ${implied:,.2f}",
+        showarrow=False,
+        yshift=20,
+    )
+    c_right.plotly_chart(fig_wf, use_container_width=True)
+
+    # Sensitivity block
     main_area.markdown("#### Sensitivity")
     g_grid = np.linspace(g_min, g_max, 7)
     w_grid = np.linspace(w_min, w_max, 7)
