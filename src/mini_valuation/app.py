@@ -329,3 +329,27 @@ header [data-testid="baseButton-secondary"] span[class*="material"]::after,
 """,
     unsafe_allow_html=True,
 )
+st.markdown(
+    """
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+/* Force the sidebar toggle glyph (open + closed states) to render as an icon */
+header [data-testid="stExpanderSidebarButton"] [data-testid="stIconMaterial"],
+[data-testid="stSidebarCollapsedControl"] [data-testid="stIconMaterial"] {
+  font-family: 'Material Icons' !important;
+  font-weight: normal !important;
+  font-style: normal !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  display: inline-block !important;
+  white-space: nowrap !important;
+  direction: ltr !important;
+  font-feature-settings: 'liga' !important; /* enable ligatures */
+  -webkit-font-smoothing: antialiased;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
