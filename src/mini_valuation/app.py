@@ -428,7 +428,7 @@ if run_mode == "DCF":
     fig_stack.update_layout(
         barmode="stack",
         barnorm="percent",
-        title="EV composition<br><sup>PV of terminal vs PV of explicit</sup>",
+        title="EV Composition<br><sup>PV of terminal vs PV of explicit</sup>",
         legend=dict(x=0.99, y=0.99, xanchor="right", yanchor="top"),
         margin=dict(l=20, r=20, t=60, b=20),
     )
@@ -484,7 +484,7 @@ if run_mode == "DCF":
         )
     )
     fig_hm.update_layout(
-        title="Sensitivity heatmap",
+        title="Growth-WACCPrice Surface<br><sup>Implied share price for each growth-discount pair</sup>",
         xaxis_title="WACC (%)",
         yaxis_title="Growth (%)",
         margin=dict(l=20, r=20, t=40, b=20),
@@ -492,9 +492,6 @@ if run_mode == "DCF":
     # Full-width heatmap directly under the top row; use_container_width keeps it wide
     main_area.plotly_chart(fig_hm, use_container_width=True, config=CONFIG_MINIMAL)
     main_area.dataframe(sens.style.format("${:,.2f}"))
-
-    # Mini tornado (±50 bps) for WACC and Terminal growth
-    main_area.markdown("#### Mini tornado (±50 bps)")
 
     def _price_at(w: float, g: float) -> float:
         # Clamp to valid space: wacc must exceed terminal_g slightly
@@ -546,7 +543,7 @@ if run_mode == "DCF":
     )
     fig_tornado.update_layout(
         barmode="overlay",
-        title="Implied Price Sensitivity",
+        title="Univariate WACC & Terminal Growth Sensitivity<br><sup>Implied price response to ±50 bps WACC and terminal growth</sup>",
         xaxis_title="Price ($)",
         yaxis_title="",
         showlegend=False,
