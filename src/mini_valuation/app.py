@@ -246,3 +246,19 @@ button[aria-label="Close sidebar"] { display: none !important; }
 """,
     unsafe_allow_html=True,
 )
+
+# Stronger override to hide any sidebar toggle button and keep sidebar open
+st.markdown(
+    """
+<style>
+/* Hide any variant of the sidebar toggle button */
+[data-testid="stSidebarCollapsedControl"],
+button[title="Toggle sidebar"],
+button[aria-label*="sidebar"],
+header [data-testid="baseButton-secondary"]:has(span[class*="material"][aria-hidden="true"]) { display: none !important; }
+/* Ensure sidebar stays visible */
+section[data-testid="stSidebar"] { transform: translateX(0) !important; visibility: visible !important; }
+</style>
+""",
+    unsafe_allow_html=True,
+)
