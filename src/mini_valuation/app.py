@@ -353,3 +353,22 @@ header [data-testid="stExpanderSidebarButton"] [data-testid="stIconMaterial"],
 """,
     unsafe_allow_html=True,
 )
+st.markdown(
+    """
+<style>
+/* Pragmatic fallback: hide raw ligature text and show a simple glyph */
+header [data-testid="stExpanderSidebarButton"] [data-testid="stIconMaterial"],
+[data-testid="stSidebarCollapsedControl"] [data-testid="stIconMaterial"] {
+  font-size: 0 !important;            /* hide raw text like 'keyboard_double_arrow_right' */
+  font-family: inherit !important;     /* avoid icon font conflicts */
+}
+header [data-testid="stExpanderSidebarButton"] [data-testid="stIconMaterial"]::before,
+[data-testid="stSidebarCollapsedControl"] [data-testid="stIconMaterial"]::before {
+  content: '»';                        /* simple, readable double-angle icon */
+  font-size: 18px;                     /* visible size */
+  line-height: 1;                      /* align nicely */
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
