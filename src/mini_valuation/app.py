@@ -15,7 +15,7 @@ from mini_valuation.settings import get_settings  # noqa: E402
 from mini_valuation.data import fetch_financials  # noqa: E402
 from mini_valuation.valuation import dcf, multiples_implied_price  # noqa: E402
 from mini_valuation.sensitivities import growth_wacc_table  # noqa: E402
-from mini_valuation.viz import line_fcf, heatmap_sensitivity  # noqa: E402
+from mini_valuation.viz import line_fcf  # noqa: E402
 
 # Helpers for currency formatting with compact units and hover full value
 
@@ -27,9 +27,9 @@ def _fmt_money(value: float) -> tuple[str, str]:
         return "$—", "$—"
     absn = abs(n)
     if absn >= 1_000_000_000_000:
-        disp = f"${n/1_000_000_000_000:.3f}T"
+        disp = f"${n/1_000_000_000_000:.1f}T"
     elif absn >= 1_000_000_000:
-        disp = f"${n/1_000_000_000:.3f}B"
+        disp = f"${n/1_000_000_000:.1f}B"
     elif absn >= 1_000_000:
         disp = f"${n/1_000_000:.3f}M"
     elif absn >= 1_000:
@@ -206,6 +206,13 @@ if run_mode == "DCF":
     implied = float(result["per_share"])
     upside = (implied / data["price"] - 1) * 100 if data["price"] > 0 else np.nan
 
+    # Guardrails
+    if float(term_g) >= float(wacc):
+        main_area.markdown(
+            "<span style='color:#b00020; padding:4px 8px; border:1px solid #b00020; border-radius:6px;'>Unstable terminal math (g ≥ WACC)</span>",
+            unsafe_allow_html=True,
+        )
+
     # Summary row (KPIs)
     k1, k2, k3, k4, k5 = main_area.columns(5)
     _metric_card(k1, "Implied price (DCF)", implied, upside)
@@ -217,14 +224,30 @@ if run_mode == "DCF":
         if result["enterprise_value"]
         else np.nan
     )
-    _metric_percent(k5, "TV share of EV", tv_share * 100.0 if np.isfinite(tv_share) else np.nan)
+    _metric_percent(
+        k5,
+        "Terminal value as % of EV",
+        tv_share * 100.0 if np.isfinite(tv_share) else np.nan,
+    )
+    if np.isfinite(tv_share) and (tv_share > 0.85 or tv_share < 0.50):
+        hint = "High TV dependence" if tv_share > 0.85 else "Low TV dependence"
+        main_area.caption(f"{hint} (typical 60–80%)")
 
     # Core charts
     c_left, c_mid, c_right = main_area.columns([0.34, 0.33, 0.33])
 
     # 1) Projected Free Cash Flow (existing)
     years = list(range(1, len(result["fcf"]) + 1))
-    c_left.plotly_chart(line_fcf(years, result["fcf"]), use_container_width=True)
+    # Customize FCF chart: blue line, currency ticks, subtitle
+    fig_fcf = line_fcf(years, result["fcf"])
+    fig_fcf.update_traces(line=dict(color="#1f77b4"))
+    fig_fcf.update_layout(
+        title="Projected Free Cash Flow<br><sup>Years 1–5, nominal USD</sup>",
+        legend=dict(x=0.99, y=0.99, xanchor="right", yanchor="top"),
+        margin=dict(l=20, r=20, t=60, b=20),
+    )
+    fig_fcf.update_yaxes(tickformat="$~s", gridcolor="#e0e0e0")
+    c_left.plotly_chart(fig_fcf, use_container_width=True)
 
     # 2) EV composition (stacked bar): PV of explicit FCFs vs PV of terminal value
     pv_fcfs_sum = (
@@ -234,28 +257,52 @@ if run_mode == "DCF":
     )  # safety
     pv_tv = float(result["pv_tv"])
     fig_stack = go.Figure()
-    fig_stack.add_bar(x=["EV"], y=[pv_fcfs_sum], name="PV of FCFs")
-    fig_stack.add_bar(x=["EV"], y=[pv_tv], name="PV of Terminal")
-    fig_stack.update_layout(barmode="stack", title="EV Composition", yaxis_title="$")
+    fig_stack.add_bar(x=["Mix"], y=[pv_fcfs_sum], name="PV of FCFs", marker_color="#1f77b4")
+    fig_stack.add_bar(x=["Mix"], y=[pv_tv], name="PV of Terminal", marker_color="#7fb3d5")
+    fig_stack.update_layout(
+        barmode="stack",
+        barnorm="percent",
+        title="EV composition<br><sup>PV of terminal vs PV of explicit</sup>",
+        legend=dict(x=0.99, y=0.99, xanchor="right", yanchor="top"),
+        margin=dict(l=20, r=20, t=60, b=20),
+    )
+    fig_stack.update_yaxes(ticksuffix="%", gridcolor="#e0e0e0")
+    fig_stack.update_traces(texttemplate="%{percentY:.0%}", textposition="inside")
     c_mid.plotly_chart(fig_stack, use_container_width=True)
 
     # 3) EV → Equity waterfall
+    base_ev = float(result["enterprise_value"])
     fig_wf = go.Figure(
         go.Waterfall(
             name="EV→Equity",
             orientation="v",
             measure=["relative", "relative", "relative", "total"],
             x=["EV", "+Cash", "-Debt", "Equity"],
+            text=[
+                f"EV ${base_ev/1e9:,.1f}B",
+                f"+Cash ${cash_bal/1e9:,.1f}B",
+                f"-Debt ${debt/1e9:,.1f}B",
+                f"Equity ${float(result['equity_value'])/1e9:,.1f}B",
+            ],
             textposition="outside",
-            y=[float(result["enterprise_value"]), float(cash_bal), -float(debt), 0.0],
+            y=[base_ev, float(cash_bal), -float(debt), 0.0],
+            connector=dict(line=dict(color="#9e9e9e")),
+            increasing=dict(marker=dict(color="#2e7d32")),  # cash (green)
+            decreasing=dict(marker=dict(color="#c62828")),  # debt (red)
+            totals=dict(marker=dict(color="#1f77b4")),  # EV/Equity (blue)
         )
     )
-    fig_wf.update_layout(title="EV → Equity Bridge")
+    fig_wf.update_layout(
+        title="EV → Equity bridge<br><sup>Most recent balance sheet</sup>",
+        legend=dict(x=0.99, y=0.99, xanchor="right", yanchor="top"),
+        margin=dict(l=20, r=20, t=60, b=20),
+    )
+    fig_wf.update_yaxes(gridcolor="#e0e0e0", tickformat="$~s")
     # Add implied price annotation
     fig_wf.add_annotation(
         x=3,
         y=float(result["equity_value"]),
-        text=f"Price/Share: ${implied:,.2f}",
+        text=f"Shares: {shares:,.0f} • Price/Share: ${implied:,.2f}",
         showarrow=False,
         yshift=20,
     )
@@ -268,8 +315,44 @@ if run_mode == "DCF":
     sens = growth_wacc_table(
         revenue, ebit, dna if not dna.empty else None, shares, net_debt, g_grid, w_grid, term_g
     )
-    main_area.plotly_chart(heatmap_sensitivity(sens), use_container_width=True)
-    main_area.dataframe(sens.style.format("{:.2f}"))
+    # Build heatmap inline for formatting
+    x_labels = [f"{x*100:.1f}%" for x in sens.columns.astype(float)]
+    y_labels = [f"{float(y)*100:.1f}%" for y in sens.index.astype(float)]
+    fig_hm = go.Figure(
+        data=go.Heatmap(
+            z=sens.values,
+            x=x_labels,
+            y=y_labels,
+            colorscale="RdBu",
+            colorbar=dict(title="Price ($)"),
+            zmin=np.nanmin(sens.values),
+            zmax=np.nanmax(sens.values),
+        )
+    )
+    # Crosshair rectangle around current sliders
+    try:
+        xi = np.argmin(np.abs(sens.columns.astype(float) - float(wacc)))
+        yi = np.argmin(np.abs(sens.index.astype(float) - float(g_grid[3])))
+        fig_hm.add_shape(
+            type="rect",
+            x0=xi - 0.5,
+            x1=xi + 0.5,
+            y0=yi - 0.5,
+            y1=yi + 0.5,
+            xref="x",
+            yref="y",
+            line=dict(color="#000", width=1.5),
+        )
+    except Exception:
+        pass
+    fig_hm.update_layout(
+        title="Sensitivity heatmap",
+        xaxis_title="WACC (cols)",
+        yaxis_title="Growth (rows)",
+        margin=dict(l=20, r=20, t=40, b=20),
+    )
+    main_area.plotly_chart(fig_hm, use_container_width=True)
+    main_area.dataframe(sens.style.format("${:,.2f}"))
 
     # Mini tornado (±50 bps) for WACC and Terminal growth
     main_area.markdown("#### Mini tornado (±50 bps)")
