@@ -194,7 +194,7 @@ st.set_page_config(
 )
 st.title("Valuation Tool")
 st.write(
-    "Created by Ben Inglesby. Input a company's ticker and adjust assumptions in the left sidebar. Not investment advice. "
+    "Created by Ben Inglesby. Input a company's ticker and adjust assumptions in the left sidebar. Optimized for laptop/desktop screens."
 )
 
 # Model selector just under the caption
