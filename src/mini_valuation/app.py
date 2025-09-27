@@ -398,3 +398,32 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+st.markdown(
+    """
+<style>
+/* CSS-only, SVG overlay icon for the sidebar toggle (open + closed) */
+/* Hide the raw ligature text and any earlier ::before content */
+header [data-testid="stExpanderSidebarButton"] [data-testid="stIconMaterial"],
+[data-testid="stSidebarCollapsedControl"] [data-testid="stIconMaterial"] {
+  font-size: 0 !important;
+  color: transparent !important;
+  position: relative;
+}
+header [data-testid="stExpanderSidebarButton"] [data-testid="stIconMaterial"]::before,
+[data-testid="stSidebarCollapsedControl"] [data-testid="stIconMaterial"]::before { content: none !important; }
+/* Draw a stable double-chevron using an inline SVG */
+header [data-testid="stExpanderSidebarButton"] [data-testid="stIconMaterial"]::after,
+[data-testid="stSidebarCollapsedControl"] [data-testid="stIconMaterial"]::after {
+  content: '';
+  display: inline-block;
+  width: 18px; height: 18px;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: contain;
+  /* double-chevron-right SVG */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%2349513f' fill-opacity='0.8' d='M7.41 7.84 8.83 6.42 14.41 12 8.83 17.58 7.41 16.16 11.59 12zM11.41 7.84 12.83 6.42 18.41 12 12.83 17.58 11.41 16.16 15.59 12z'/></svg>");
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
