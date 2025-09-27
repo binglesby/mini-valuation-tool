@@ -281,3 +281,32 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+st.markdown(
+    """
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400" rel="stylesheet">
+<style>
+/* Prefer icon glyph if available */
+header [data-testid="baseButton-secondary"] span[class*="material"],
+[data-testid="stSidebarCollapsedControl"] span[class*="material"] {
+  font-family: 'Material Symbols Outlined', 'Material Icons' !important;
+  font-feature-settings: 'liga';
+}
+/* Fallback: replace raw icon text with a readable label */
+header [data-testid="baseButton-secondary"] span[class*="material"],
+[data-testid="stSidebarCollapsedControl"] span[class*="material"] {
+  position: relative;
+}
+header [data-testid="baseButton-secondary"] span[class*="material"]:not([style*="font-family"]):after,
+[data-testid="stSidebarCollapsedControl"] span[class*="material"]:not([style*="font-family"]):after {
+  content: 'Controls';
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+header [data-testid="baseButton-secondary"] span[class*="material"]:not([style*="font-family"]),
+[data-testid="stSidebarCollapsedControl"] span[class*="material"]:not([style*="font-family"]) {
+  font-size: 0 !important;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
