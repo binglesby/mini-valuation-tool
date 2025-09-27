@@ -90,54 +90,38 @@ h1, div[data-testid="stMarkdownContainer"] h1, .stMarkdown h1, [data-testid="stA
     unsafe_allow_html=True,
 )
 
-with st.sidebar:
+left_panel, main_area = st.columns([0.28, 0.72], gap="large")
+
+# Make the left panel behave like a sticky sidebar
+st.markdown(
+    """
+<style>
+[data-testid="column"] > div:has(> div > div > div > p:contains('Company & Valuation Settings')) { position: sticky; top: 1rem; }
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+with left_panel:
     st.markdown("**Company & Valuation Settings**")
     ticker = st.text_input("Ticker", value="AAPL").strip()
-    wacc_pct = st.slider(
-        "WACC",
-        4.0,
-        14.0,
-        float(S.DEFAULT_WACC * 100),
-        0.5,
-        format="%.1f%%",
-    )
+    wacc_pct = st.slider("WACC", 4.0, 14.0, float(S.DEFAULT_WACC * 100), 0.5, format="%.1f%%")
     wacc = wacc_pct / 100.0
     term_pct = st.slider(
-        "Terminal growth",
-        0.0,
-        4.0,
-        float(S.DEFAULT_TERMINAL_G * 100),
-        0.5,
-        format="%.1f%%",
+        "Terminal growth", 0.0, 4.0, float(S.DEFAULT_TERMINAL_G * 100), 0.5, format="%.1f%%"
     )
     term_g = term_pct / 100.0
     fallback_pe = st.slider("Fallback P/E", 5.0, 40.0, float(S.FALLBACK_PE), 1.0)
 
     st.divider()
-
     st.markdown("**Sensitivity Ranges**")
-    rev_range_pct = st.slider(
-        "Revenue growth range",
-        -2.0,
-        20.0,
-        (3.0, 10.0),
-        0.5,
-        format="%.1f%%",
-    )
+    rev_range_pct = st.slider("Revenue growth range", -2.0, 20.0, (3.0, 10.0), 0.5, format="%.1f%%")
     g_min, g_max = (rev_range_pct[0] / 100.0, rev_range_pct[1] / 100.0)
 
-    wacc_range_pct = st.slider(
-        "WACC range",
-        5.0,
-        15.0,
-        (7.0, 11.0),
-        0.5,
-        format="%.1f%%",
-    )
+    wacc_range_pct = st.slider("WACC range", 5.0, 15.0, (7.0, 11.0), 0.5, format="%.1f%%")
     w_min, w_max = (wacc_range_pct[0] / 100.0, wacc_range_pct[1] / 100.0)
 
     st.divider()
-
     st.markdown("**Operating Assumptions**")
     tax_pct = st.slider("Tax rate", 0.0, 40.0, float(S.TAX_RATE * 100), 0.5, format="%.1f%%")
     tax_rate = tax_pct / 100.0
@@ -156,7 +140,8 @@ if not ticker:
 data = fetch_financials(ticker)
 
 # Company title always visible
-st.subheader(data["name"])
+with main_area:
+    st.subheader(data["name"])
 
 income: pd.DataFrame = data["income"]
 balance: pd.DataFrame = data["balance"]
@@ -202,38 +187,38 @@ if run_mode == "DCF":
     upside = (implied / data["price"] - 1) * 100 if data["price"] > 0 else np.nan
 
     # Inline metrics including Current price
-    m_price, m1, m2, m3 = st.columns(4)
+    m_price, m1, m2, m3 = main_area.columns(4)
     _metric_card(m_price, "Current price", float(data["price"]))
     _metric_card(m1, "Implied price (DCF)", implied, upside)
     _metric_card(m2, "Enterprise Value (PV)", float(result["enterprise_value"]))
     _metric_card(m3, "Equity Value", float(result["equity_value"]))
 
     years = list(range(1, len(result["fcf"]) + 1))
-    st.plotly_chart(line_fcf(years, result["fcf"]), use_container_width=True)
+    main_area.plotly_chart(line_fcf(years, result["fcf"]), use_container_width=True)
 
-    st.markdown("#### Sensitivity")
+    main_area.markdown("#### Sensitivity")
     g_grid = np.linspace(g_min, g_max, 7)
     w_grid = np.linspace(w_min, w_max, 7)
     sens = growth_wacc_table(
         revenue, ebit, dna if not dna.empty else None, shares, net_debt, g_grid, w_grid, term_g
     )
-    st.plotly_chart(heatmap_sensitivity(sens), use_container_width=True)
-    st.dataframe(sens.style.format("{:.2f}"))
+    main_area.plotly_chart(heatmap_sensitivity(sens), use_container_width=True)
+    main_area.dataframe(sens.style.format("{:.2f}"))
 
 else:
     ni = float(net_income.tail(1).sum())
     implied = multiples_implied_price(ni, pe=float(fallback_pe), shares_out=shares)
     upside = (implied / data["price"] - 1) * 100 if data["price"] > 0 else np.nan
     # Inline metrics: Current price and P/E implied
-    m_price, m_pe = st.columns(2)
+    m_price, m_pe = main_area.columns(2)
     _metric_card(m_price, "Current price", float(data["price"]))
     _metric_card(m_pe, "Implied price (P/E)", implied, upside)
-    st.caption(
+    main_area.caption(
         "Sector median P/E not always available via yfinance; using S&P 500 median fallback (20x)."
     )
 
-st.divider()
-st.markdown(
+main_area.divider()
+main_area.markdown(
     "**Notes**: Uses last reported annuals. Simple heuristics for Capex (5% of revenue) and ΔWC (1% of revenue). Tax 25%. UI lets you adjust WACC and terminal growth."
 )
 
@@ -423,6 +408,20 @@ header [data-testid="stExpanderSidebarButton"] [data-testid="stIconMaterial"]::a
   /* double-chevron-right SVG */
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%2349513f' fill-opacity='0.8' d='M7.41 7.84 8.83 6.42 14.41 12 8.83 17.58 7.41 16.16 11.59 12zM11.41 7.84 12.83 6.42 18.41 12 12.83 17.58 11.41 16.16 15.59 12z'/></svg>");
 }
+</style>
+""",
+    unsafe_allow_html=True,
+)
+st.markdown(
+    """
+<style>
+/* Hide native sidebar toggle/UI since we now use a page-embedded panel */
+header [data-testid="stExpanderSidebarButton"],
+[data-testid="stSidebarCollapsedControl"],
+section[data-testid="stSidebar"] { display: none !important; }
+/* Make the first column behave like a sticky sidebar */
+/* Conservative selector to avoid breakage across versions */
+section.main > div > div > div:first-child { position: sticky; top: 1rem; align-self: flex-start; }
 </style>
 """,
     unsafe_allow_html=True,
