@@ -262,3 +262,27 @@ section[data-testid="stSidebar"] { transform: translateX(0) !important; visibili
 """,
     unsafe_allow_html=True,
 )
+st.markdown(
+    """
+<style>
+/* Final kill switch for the sidebar toggle control (all states/children) */
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="stSidebarCollapsedControl"] *,
+section[data-testid="stSidebar"] [data-testid="stSidebarCollapsedControl"],
+section[data-testid="stSidebar"] [data-testid="stSidebarCollapsedControl"] *,
+body [title*="sidebar"],
+body [aria-label*="sidebar"],
+body [title*="sidebar"] *,
+body [aria-label*="sidebar"] * {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
