@@ -1,12 +1,20 @@
 from __future__ import annotations
+import sys
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import streamlit as st
-from mini_valuation.settings import get_settings
-from mini_valuation.data import fetch_financials
-from mini_valuation.valuation import dcf, multiples_implied_price
-from mini_valuation.sensitivities import growth_wacc_table
-from mini_valuation.viz import line_fcf, heatmap_sensitivity
+
+# Ensure src/ is on sys.path when running via script path in Streamlit Cloud
+_SRC_DIR = Path(__file__).resolve().parents[1]
+if str(_SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(_SRC_DIR))
+
+from mini_valuation.settings import get_settings  # noqa: E402
+from mini_valuation.data import fetch_financials  # noqa: E402
+from mini_valuation.valuation import dcf, multiples_implied_price  # noqa: E402
+from mini_valuation.sensitivities import growth_wacc_table  # noqa: E402
+from mini_valuation.viz import line_fcf, heatmap_sensitivity  # noqa: E402
 
 # Helpers for currency formatting with compact units and hover full value
 
