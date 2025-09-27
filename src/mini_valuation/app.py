@@ -310,3 +310,22 @@ header [data-testid="baseButton-secondary"] span[class*="material"]:not([style*=
 """,
     unsafe_allow_html=True,
 )
+st.markdown(
+    """
+<style>
+/* Reset sidebar toggle button font to default Streamlit font (open and closed states) */
+header [data-testid="baseButton-secondary"] span[class*="material"],
+[data-testid="stSidebarCollapsedControl"] span[class*="material"] {
+  font-family: inherit !important;
+  font-feature-settings: normal !important;
+  font-size: inherit !important;
+}
+/* Remove any custom replacement label/content from prior overrides */
+header [data-testid="baseButton-secondary"] span[class*="material"]::before,
+header [data-testid="baseButton-secondary"] span[class*="material"]::after,
+[data-testid="stSidebarCollapsedControl"] span[class*="material"]::before,
+[data-testid="stSidebarCollapsedControl"] span[class*="material"]::after { content: none !important; }
+</style>
+""",
+    unsafe_allow_html=True,
+)
