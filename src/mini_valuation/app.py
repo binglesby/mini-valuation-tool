@@ -390,27 +390,10 @@ if run_mode == "DCF":
             x=x_labels,
             y=y_labels,
             colorscale="RdBu",
-            colorbar=dict(title="Price ($)"),
             zmin=np.nanmin(sens.values),
             zmax=np.nanmax(sens.values),
         )
     )
-    # Crosshair rectangle around current sliders
-    try:
-        xi = np.argmin(np.abs(sens.columns.astype(float) - float(wacc)))
-        yi = np.argmin(np.abs(sens.index.astype(float) - float(g_grid[3])))
-        fig_hm.add_shape(
-            type="rect",
-            x0=xi - 0.5,
-            x1=xi + 0.5,
-            y0=yi - 0.5,
-            y1=yi + 0.5,
-            xref="x",
-            yref="y",
-            line=dict(color="#000", width=1.5),
-        )
-    except Exception:
-        pass
     fig_hm.update_layout(
         title="Sensitivity heatmap",
         xaxis_title="WACC (cols)",

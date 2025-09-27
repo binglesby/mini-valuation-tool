@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 def line_fcf(years: list[int], fcf: np.ndarray) -> go.Figure:
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=years, y=fcf, mode="lines+markers", name="Projected FCF"))
-    fig.update_layout(title="Projected Free Cash Flow", xaxis_title="Year", yaxis_title="FCF")
+    fig.update_layout(title="Projected Free Cash Flow", xaxis_title="Year", yaxis_title="FCF ($)")
     return fig
 
 
