@@ -113,7 +113,7 @@ st.set_page_config(
 )
 st.title("Valuation Tool")
 st.write(
-    "Created by Ben Inglesby, for educational use only. Input a company's ticker and adjust assumptions in the left sidebar. Not investment advice. "
+    "Created by Ben Inglesby. Input a company's ticker and adjust assumptions in the left sidebar. Not investment advice. "
 )
 
 # Model selector just under the caption
@@ -300,9 +300,7 @@ if run_mode == "DCF":
         main_area.caption(f"{hint} (typical 60–80%)")
 
     # Core charts
-    c_left, c_mid, c_right = main_area.columns([0.34, 0.33, 0.33])
-
-    # 1) Projected Free Cash Flow (existing)
+    # 1) Projected Free Cash Flow (full width)
     years = list(range(1, len(result["fcf"]) + 1))
     # Customize FCF chart: blue line, currency ticks, subtitle
     fig_fcf = line_fcf(years, result["fcf"])
@@ -313,7 +311,10 @@ if run_mode == "DCF":
         margin=dict(l=20, r=20, t=60, b=20),
     )
     fig_fcf.update_yaxes(tickformat="$~s", gridcolor="#e0e0e0")
-    c_left.plotly_chart(fig_fcf, use_container_width=True, config=CONFIG_MINIMAL)
+    main_area.plotly_chart(fig_fcf, use_container_width=True, config=CONFIG_MINIMAL)
+
+    # Row for EV visuals under FCF
+    ev_left, ev_right = main_area.columns(2)
 
     # 2) EV composition (stacked bar): PV of explicit FCFs vs PV of terminal value
     pv_fcfs_sum = (
@@ -334,7 +335,8 @@ if run_mode == "DCF":
     )
     fig_stack.update_yaxes(ticksuffix="%", gridcolor="#e0e0e0")
     fig_stack.update_traces(texttemplate="%{percentY:.0%}", textposition="inside")
-    c_mid.plotly_chart(fig_stack, use_container_width=True, config=CONFIG_MINIMAL)
+    fig_stack.update_layout(showlegend=False)
+    ev_left.plotly_chart(fig_stack, use_container_width=True, config=CONFIG_MINIMAL)
 
     # 3) EV → Equity waterfall
     base_ev = float(result["enterprise_value"])
@@ -372,7 +374,9 @@ if run_mode == "DCF":
         showarrow=False,
         yshift=20,
     )
-    c_right.plotly_chart(fig_wf, use_container_width=True, config=CONFIG_MINIMAL)
+    # Remove all in-chart labels from the waterfall
+    fig_wf.update_traces(text="")
+    ev_right.plotly_chart(fig_wf, use_container_width=True, config=CONFIG_MINIMAL)
 
     # Sensitivity block
     main_area.markdown("#### Sensitivity")
@@ -492,7 +496,7 @@ else:
 
 main_area.divider()
 main_area.markdown(
-    "**Notes**: Uses last reported annuals. Simple heuristics for Capex (5% of revenue) and ΔWC (1% of revenue). Tax 25%. UI lets you adjust WACC and terminal growth."
+    "**Notes**: Uses last reported annuals. For educational use only. Not investment advice."
 )
 
 # Global Apple system fonts, fix sidebar toggle icon, and consistent sidebar spacing
