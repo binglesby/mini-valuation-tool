@@ -194,7 +194,7 @@ st.set_page_config(
 )
 st.title("Valuation Tool")
 st.write(
-    "Created by Ben Inglesby. Input a company's ticker and adjust assumptions in the left sidebar. Optimized for laptop/desktop screens."
+    "Created by Ben Inglesby. Input a company's ticker and adjust assumptions in the left sidebar. Optimized for wider screens (laptop/desktop)."
 )
 
 # Model selector just under the caption
@@ -464,7 +464,7 @@ if run_mode == "DCF":
     ev_right.plotly_chart(fig_wf, use_container_width=True, config=CONFIG_MINIMAL)
 
     # Sensitivity block
-    main_area.markdown("#### Sensitivity")
+    main_area.markdown("#### PriceSensitivity")
     g_grid = np.linspace(g_min, g_max, 7)
     w_grid = np.linspace(w_min, w_max, 7)
     sens = growth_wacc_table(
