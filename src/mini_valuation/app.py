@@ -464,7 +464,7 @@ if run_mode == "DCF":
     ev_right.plotly_chart(fig_wf, use_container_width=True, config=CONFIG_MINIMAL)
 
     # Sensitivity block
-    main_area.markdown("#### PriceSensitivity")
+    main_area.markdown("#### Price Sensitivity")
     g_grid = np.linspace(g_min, g_max, 7)
     w_grid = np.linspace(w_min, w_max, 7)
     sens = growth_wacc_table(
