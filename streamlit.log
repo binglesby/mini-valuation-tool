@@ -6,9 +6,8 @@ Collecting usage statistics. To deactivate, set browser.gatherUsageStats to fals
 
   Local URL: http://localhost:8501
   Network URL: http://10.0.0.202:8501
-  External URL: http://76.151.190.28:8501
-
-  For better performance, install the Watchdog module:
+  External URL: http://76.151.2025-10-01 12:21:30.607 [Errno 5] Input/output error
+tchdog module:
 
   $ xcode-select --install
   $ pip install watchdog

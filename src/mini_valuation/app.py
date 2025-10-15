@@ -5,6 +5,7 @@ import numpy as np
 import plotly.graph_objects as go
 import pandas as pd
 import streamlit as st
+from yfinance.exceptions import YFRateLimitError as _YFRateLimitError  # type: ignore
 
 # Ensure src/ is on sys.path when running via script path in Streamlit Cloud
 _SRC_DIR = Path(__file__).resolve().parents[1]
@@ -299,7 +300,17 @@ with left_panel:
 if not ticker:
     st.stop()
 
-data = fetch_financials(ticker)
+try:
+    data = fetch_financials(ticker)
+except _YFRateLimitError:
+    st.error(
+        "Data provider temporarily rate-limited. Please wait ~30–60s and try again, or change ticker."
+    )
+    st.stop()
+except Exception as _err:
+    st.error("Unable to load data at the moment. Please try again shortly.")
+    st.caption("Technical detail (for logs): fetch failed but UI remained responsive.")
+    st.stop()
 
 # Company title always visible
 with main_area:
